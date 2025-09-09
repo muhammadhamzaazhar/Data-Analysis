@@ -23,20 +23,25 @@ def render_chat(question, answer):
        
     if answer is not None:
         if isinstance(answer, dict) and answer["type"] == "plot":
-            st.plotly_chart(
+            # st.plotly_chart(
+            #     answer["value"],
+            #     use_container_width=False,
+            #     config={
+            #         'scrollZoom': True,
+            #         'displayModeBar': True,
+            #         'responsive': False,  
+            #         'displaylogo': False,
+            #         'toImageButtonOptions': {
+            #             'format': 'png',
+            #             'filename': 'custom_image',
+            #             'scale': 2
+            #         }
+            #     }
+            # )
+
+            st.image(
                 answer["value"],
-                use_container_width=False,
-                config={
-                    'scrollZoom': True,
-                    'displayModeBar': True,
-                    'responsive': False,  
-                    'displaylogo': False,
-                    'toImageButtonOptions': {
-                        'format': 'png',
-                        'filename': 'custom_image',
-                        'scale': 2
-                    }
-                }
+                width=600,
             )
         elif isinstance(answer, dict) and answer["type"] == "raw":
             st.write(answer["value"])
