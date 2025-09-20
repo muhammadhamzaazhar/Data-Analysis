@@ -2,6 +2,13 @@
 
 A Streamlit-based web application that leverages AI to analyze and visualize data through natural language queries. Upload your dataset and get instant insights through conversational interactions.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/186e287b-92b5-4c05-9740-2bf334479d05" alt="App Screenshot" width="800"/>
+</p>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/3ac0eaf0-6133-478f-b2bb-6dc319c58f60" alt="App Screenshot" width="800"/>
+</p>
+
 ## Features
 
 - **Easy Data Upload**: Supports CSV and Excel file formats
