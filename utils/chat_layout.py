@@ -15,7 +15,7 @@ def render_chat(question: str, answer: str | dict | None):
                 word-wrap:break-word;
                 box-shadow:0 4px 10px rgba(0,0,0,0.15);
             ">
-                {question}
+                {html.escape(question)}
             </div>
         </div>
         """,
@@ -33,8 +33,11 @@ def render_chat(question: str, answer: str | dict | None):
         )
         return
 
-    answer_text = answer["value"] if isinstance(answer, dict) else str(answer)
+    if isinstance(answer, dict) and answer.get("type") == "dataframe":
+        st.write(answer["value"])
+        return
 
+    answer_text = answer["value"] if isinstance(answer, dict) else str(answer)
     st.write(
         f"""
         <div style="display:flex; justify-content:flex-start; margin:14px 0;">
@@ -48,7 +51,7 @@ def render_chat(question: str, answer: str | dict | None):
                 word-wrap:break-word;
                 box-shadow:0 4px 10px rgba(0,0,0,0.15);
             ">
-                {answer_text}
+                {html.escape(answer_text)}
             </div>
         </div>
         """,

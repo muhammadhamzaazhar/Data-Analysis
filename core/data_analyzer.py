@@ -62,18 +62,20 @@ class DataAnalyzer:
         )
 
         instructions = (
-            "1. For NON-VISUALIZATION queries: Provide comprehensive, detailed analysis with clear explanations of findings, patterns, statistical insights, and actionable recommendations.\n\n"
-            "2. For VISUALIZATION requests: \n"
-            "   a) Generate the appropriate chart/plot as requested\n"
-            "   b) Provide data-driven insights, NOT generic chart descriptions\n"
-            "   c) Focus on WHAT THE DATA REVEALS, not what the chart shows visually\n\n"
-            "PROVIDE INSIGHTS THAT ANSWER: What does this data tell us? What should we pay attention to? What actions might these findings suggest?"
+            """
+                1. For NON-VISUALIZATION queries: Provide comprehensive, detailed analysis with clear explanations of findings, patterns, statistical insights, and actionable recommendations.
+                2. For VISUALIZATION requests: 
+                    Generate the appropriate chart/plot as requested. 
+                    Provide data-driven insights, NOT generic chart descriptions. 
+                    Focus on WHAT THE DATA REVEALS, not what the chart shows visually.
+            """
         )
 
         final_query = (
             f"[QUERY]:\n{query}\n\n"
             f"[INSTRUCTIONS]:\n{instructions}\n\n"
-            f"[MEMORY]:\n{conversation_history_str}"
+            f"[MEMORY]:\n{conversation_history_str}\n\n"
+            f"PROVIDE INSIGHTS THAT ANSWER: What does this data tell us? What should we pay attention to? What actions might these findings suggest?"
         )
 
         try:
@@ -123,6 +125,7 @@ class DataAnalyzer:
 
                 return {"type": "plot", "value": image, "chart_description": description}
             
-            return {"type": "raw", "value": response}
+            value = str(response.value) if response.type == "number" else response.value
+            return {"type": response.type, "value": value}
         except Exception as e:
             return f"Error processing your query: {str(e)}"
