@@ -1,9 +1,6 @@
-import io
-import duckdb 
+import io, re
 import base64
 import pandasai as pai
-import plotly.tools as tls
-import matplotlib.pyplot as plt
 from PIL import Image
 
 from utils.llm import get_llm
@@ -51,59 +48,81 @@ class DataAnalyzer:
         except Exception as e:
             raise ValueError(f"Error loading file: {str(e)}")
 
-    def analyze(self, query: str):
+    def analyze(self, query: str, chat_history=None):
         if not query or not isinstance(query, str):
             raise ValueError("Invalid query")
 
-        try:
-            if len(query.strip()) < 2:
-                return "Please provide a more specific question about your data."
-            
-            try:
-                # instruction = (
-                #     "If a visualization is needed, use Plotly Express to create an interactive figure, "
-                #     "assign it to a variable named `result`, and do not save to file."
-                # )
-                # final_query = f"{query}\n\n{instruction}"
-                response = self.df.chat(query)
-                if hasattr(response, "_get_image"):
-                    # code = response.last_code_executed
-                    # safe_code = sanitize_visualization_code(code)
+        if len(query.strip()) < 2:
+            return "Please provide a more specific question about your data."
 
-                    # try:
-                    #     local_vars = {}
-                    #     duckdb.register("table_from_bytes", self.df)
-                    #     exec(safe_code, globals(), local_vars)
+        conversation_history = chat_history[-5:] if len(chat_history) > 5 else chat_history
+        conversation_history_str = "\n\n".join(
+            [f"Q: {c['question']}\nA: {c['answer']['value'] if isinstance(c['answer'], dict) else c['answer']}" 
+            for c in conversation_history if c.get("answer") is not None]
+        )
+
+        instructions = (
+            "1. For NON-VISUALIZATION queries: Provide comprehensive, detailed analysis with clear explanations of findings, patterns, statistical insights, and actionable recommendations.\n\n"
+            "2. For VISUALIZATION requests: \n"
+            "   a) Generate the appropriate chart/plot as requested\n"
+            "   b) Provide data-driven insights, NOT generic chart descriptions\n"
+            "   c) Focus on WHAT THE DATA REVEALS, not what the chart shows visually\n\n"
+            "PROVIDE INSIGHTS THAT ANSWER: What does this data tell us? What should we pay attention to? What actions might these findings suggest?"
+        )
+
+        final_query = (
+            f"[QUERY]:\n{query}\n\n"
+            f"[INSTRUCTIONS]:\n{instructions}\n\n"
+            f"[MEMORY]:\n{conversation_history_str}"
+        )
+
+        try:
+            response = self.df.chat(final_query)
+    
+            if hasattr(response, "_get_image"):
+                code = response.last_code_executed
+
+                # Look for single/double quoted strings
+                print_matches = re.findall(r'print\(["\'](.*?)["\']\)', code)
+                
+                if print_matches:
+                    description = print_matches[-1]
+                else:
+                    description = "Plot Generated Successfully"
+                
+                # safe_code = sanitize_visualization_code(code)
+
+                # try:
+                #     local_vars = {}
+                #     duckdb.register("table_from_bytes", self.df)
+                #     exec(safe_code, globals(), local_vars)
                     # except Exception as e:
                     #     print("[ERROR] Exec failed:", str(e))
 
-                    # fig = plt.gcf()
+                # fig = plt.gcf()
 
-                    # fig_plotly = tls.mpl_to_plotly(fig) 
-                    # fig_plotly.update_layout(
-                    #     width=600,
-                    #     height=450, 
-                    #     plot_bgcolor='white',
-                    #     paper_bgcolor='white',
-                    #     xaxis=dict(
-                    #         title_font=dict(size=15, color='black'),
-                    #         tickfont=dict(color='black'),
-                    #     ),
-                    #     yaxis=dict(
-                    #         title_font=dict(size=15, color='black'),
-                    #         tickfont=dict(color='black'),
-                    #     )
-                    # )
-                    
-                    b64_png = response.get_base64_image()        # str
-                    img_bytes = base64.b64decode(b64_png)
-                    image = Image.open(io.BytesIO(img_bytes))
-                    
-                    return {"type": "plot", "value": image}
+                # fig_plotly = tls.mpl_to_plotly(fig) 
+                # fig_plotly.update_layout(
+                #     width=600,
+                #     height=450, 
+                #     plot_bgcolor='white',
+                #     paper_bgcolor='white',
+                #     xaxis=dict(
+                #         title_font=dict(size=15, color='black'),
+                #         tickfont=dict(color='black'),
+                #     ),
+                #     yaxis=dict(
+                #         title_font=dict(size=15, color='black'),
+                #         tickfont=dict(color='black'),
+                #     )
+                # )
+                
+                b64_png = response.get_base64_image()        
+                img_bytes = base64.b64decode(b64_png)
+                image = Image.open(io.BytesIO(img_bytes))
 
-                return {"type": "raw", "value": response}
-            except Exception as e:
-                return f"Error processing your query: {str(e)}"
-
+                return {"type": "plot", "value": image, "chart_description": description}
+            
+            return {"type": "raw", "value": response}
         except Exception as e:
-            return f"An unexpected error occurred: {str(e)}"
+            return f"Error processing your query: {str(e)}"

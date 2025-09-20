@@ -4,8 +4,28 @@ from utils.config_validator import check_env_vars
 from core.data_analyzer import DataAnalyzer
 from utils.chat_layout import render_chat
 
-st.set_page_config(page_title="AI Data Analyst", page_icon="📊", layout="wide")
-               
+st.set_page_config(
+    page_title="AI Data Analyst", 
+    page_icon="📊", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
+
+st.markdown(
+    """
+    <style>
+        [data-testid="stMain"] {
+            background: #0f0f11 !important; 
+        }
+
+        [data-testid="stHeader"] {
+            background: #0f0f11 !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 def main():
     if not check_env_vars():
         return
@@ -53,7 +73,7 @@ def main():
         with st.spinner("Analyzing your data..."):
             try:
                 analyzer = DataAnalyzer(uploaded_file)
-                response = analyzer.analyze(query)
+                response = analyzer.analyze(query, chat_history=st.session_state.chat_history)
                 st.session_state.chat_history[-1]["answer"] = response
             except Exception as e:
                 st.error(f"An error occurred during processing: {str(e)}")
